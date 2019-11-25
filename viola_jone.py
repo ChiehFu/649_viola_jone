@@ -1,8 +1,12 @@
-#!/usr/bin/env python
+
 # coding: utf-8
 
-# In[1]:
+# In[54]:
 
+
+import math
+from tqdm import tqdm
+from enum import Enum
 
 
 class RectangleRegion:
@@ -15,10 +19,6 @@ class RectangleRegion:
         return ii[self.y+self.height - 1][self.x+self.width - 1] + ii[self.y - 1][self.x - 1] - (ii[self.y+self.height - 1][self.x - 1] + ii[self.y - 1][self.x+self.width - 1])
     
 
-
-# In[2]:
-
-
 def integral_image(image):
     ii = np.zeros(image.shape)
     s = np.zeros(image.shape)
@@ -28,24 +28,37 @@ def integral_image(image):
             ii[y][x] = ii[y][x-1]+s[y][x] if x-1 >= 0 else s[y][x]
     return ii
 
-
-# In[3]:
-
-
-import math
-from tqdm import tqdm
-
 class ViolaJones:
     
+#     class Feature(Enum):
+#         type_1 = 'Two Vertical'
+#         type_2 = 'Two Horizontal'
+#         type_3 = 'Three Horizontal'
+#         type_4 = 'Three Vertical'
+#         type_5 = 'Four'
+        
     class WeakClassifier:
-        def __init__(self, positive_regions, negative_regions, threshold, polarity):
-            self.positive_regions = positive_regions
-            self.negative_regions = negative_regions
+        def __init__(self, haar_feature, threshold, polarity):
+            self.haar_feature = haar_feature
             self.threshold = threshold
             self.polarity = polarity
+            #self.acc = None
+            
         def classify(self, x):
-            feature = lambda ii: sum([pos.compute_feature(ii) for pos in self.positive_regions]) - sum([neg.compute_feature(ii) for neg in self.negative_regions])
-            return 1 if self.polarity * feature(x) < self.polarity * self.threshold else 0
+            return 1 if self.polarity * self.haar_feature.compute_features(x) < self.polarity * self.threshold else 0
+    
+    class HaarFeature:
+        def __init__(self, harr_type, positive_regions, negative_regions, position, width, height):
+            self.harr_type = harr_type
+            self.positive_regions = positive_regions
+            self.negative_regions = negative_regions
+            self.position = position
+            self.width = width
+            self.height = height
+            
+        def compute_features(self, x):
+            return sum([pos.compute_feature(x) for pos in self.positive_regions]) - sum([neg.compute_feature(x) for neg in self.negative_regions])
+        
             
     def __init__(self, T = 10):
         self.T = T
@@ -78,35 +91,35 @@ class ViolaJones:
                     while cur_y + h <= height:
                         
                         rec = RectangleRegion(cur_x, cur_y, w, h)
-                        
-                        # type 1 (two vertical) features.
+
                         if cur_x + 2 * w <=  width:
+                            # type 1 (two vertical) features
                             rec_right = RectangleRegion(cur_x + w, cur_y, w, h)
-                            features.append(([rec], [rec_right]))
+                            features.append(self.HaarFeature(1, [rec], [rec_right], (cur_x, cur_y), 2 * w, h))
                             type_count[0] += 1
                             
                             # type 4 (three vertical) features.
                             if cur_x + 3 * w <= width:
                                 rec_right_right = RectangleRegion(cur_x + 2 * w, cur_y, w, h)
-                                features.append(([rec, rec_right_right], [rec_right]))
+                                features.append(self.HaarFeature(4, [rec, rec_right_right], [rec_right], (cur_x, cur_y), 3 * w, h))
                                 type_count[3] += 1
                                 
                         # type 2 (two horizontal) features.
                         if cur_y + 2 * h <= height:
                             rec_bot = RectangleRegion(cur_x, cur_y + h, w, h)
-                            features.append(([rec], [rec_bot]))
+                            features.append(self.HaarFeature(2, [rec], [rec_bot], (cur_x, cur_y), w, 2 * h))
                             type_count[1] += 1
                             
                             # type 3 (three horizontal) features.
                             if cur_y + 3 * h <= height:
                                 rec_bot_bot = RectangleRegion(cur_x, cur_y + 2 * h, w, h)
-                                features.append(([rec, rec_bot_bot], [rec_bot]))
+                                features.append(self.HaarFeature(3, [rec, rec_bot_bot], [rec_bot], (cur_x, cur_y), w, 3 * h))
                                 type_count[2] += 1
                                 
                         # type 5 (four) features.
                         if (cur_x + 2 * w <=  width) and (cur_y + 2 * h <= height):
                             rec_bot_right = RectangleRegion(cur_x + w, cur_y + h, w, h)
-                            features.append(([rec, rec_bot_right], [rec_right, rec_bot]))
+                            features.append(self.HaarFeature(5, [rec, rec_bot_right], [rec_right, rec_bot], (cur_x, cur_y), 2 * w, 2 * h))
                             type_count[4] += 1
                             
                         cur_y += 1
@@ -128,9 +141,8 @@ class ViolaJones:
         X = np.zeros((len(features), len(training_data)))
         y = np.array(list(map(lambda data: data[1], training_data)))
         i = 0
-        for positive_regions, negative_regions in tqdm(features):
-            feature = lambda ii: sum([pos.compute_feature(ii) for pos in positive_regions]) - sum([neg.compute_feature(ii) for neg in negative_regions])
-            X[i] = list(map(lambda data: feature(data[0]), training_data))
+        for haar_feature in tqdm(features):
+            X[i] = list(map(lambda data: haar_feature.compute_features(data[0]), training_data))
             i += 1
         return X, y
 
@@ -155,6 +167,7 @@ class ViolaJones:
             pos_seen, neg_seen = 0, 0
             pos_weights, neg_weights = 0, 0
             min_error, best_feature, best_threshold, best_polarity = float('inf'), None, None, None
+            
             for w, f, label in applied_feature:
                 error = min(neg_weights + total_pos - pos_weights, pos_weights + total_neg - neg_weights)
                 if error < min_error:
@@ -168,10 +181,11 @@ class ViolaJones:
                 else:
                     neg_seen += 1
                     neg_weights += w
-            clf = self.WeakClassifier(best_feature[0], best_feature[1], best_threshold, best_polarity)
+            clf = self.WeakClassifier(best_feature, best_threshold, best_polarity)
             classifiers.append(clf)
             
             pbar.update(1)
+            
         return classifiers
         
     def select_best(self, classifiers, weights, training_data):
@@ -185,6 +199,9 @@ class ViolaJones:
             error = error / len(training_data)
             if error < best_error:
                 best_clf, best_error, best_accuracy = clf, error, accuracy
+    
+        # Set training accuracy for the selected classifier
+        #best_clf.acc = sum(1 if i == 0 else 0 for i in best_accuracy) / len(best_accuracy)
         return best_clf, best_error, best_accuracy
 
     def train(self, training, testing, max_height=8, max_width=8, test_round={1, 3, 5, 10}):
@@ -261,7 +278,7 @@ class ViolaJones:
         
 
 
-# In[4]:
+# In[2]:
 
 
 from PIL import Image
@@ -284,7 +301,7 @@ for folder, yVal in folders.items():
         testData.append([np.asarray(im, dtype="int32"), yVal])
 
 
-# In[5]:
+# In[3]:
 
 
 # print([n[1] for n in trainData])
@@ -292,7 +309,7 @@ print('# of training images : ', len(trainData))
 print('# of testing images : ', len(testData))
 
 
-# In[6]:
+# In[4]:
 
 
 import pickle
@@ -309,18 +326,70 @@ def read_mode(file_name):
         return model
 
 
-# In[7]:
+# In[55]:
 
 
 model = ViolaJones()
-# test_trainData = trainData[0:100] + trainData[2300:]
-# test_testData = testData[0:100] + testData[2100:]
+test_trainData = trainData[0:100] + trainData[2300:]
+test_testData = testData[0:100] + testData[2100:]
 model.train(trainData, testData, 8, 8)
-save_model(model, 'model')
+save_model(model, 'model_1124')
 
 
-# In[ ]:
+# In[20]:
 
 
+# model = read_mode('model_test')
 
+
+# In[58]:
+
+
+# check_round = [1, 3, 5, 10]
+
+
+# import matplotlib.pyplot as plt
+# import matplotlib.patches as patches
+# from PIL import Image
+# import numpy as np
+
+# def show_clf_detail(img, clf):
+#     print('Type:', clf.haar_feature.harr_type)
+#     print('Position:', clf.haar_feature.position)
+#     print('Width:', clf.haar_feature.width)
+#     print('Length:', clf.haar_feature.height)
+#     print('Threshold:', clf.threshold)
+#     #print('Training accuracy:', clf.acc)
+#     # Create figure and axes
+#     fig, ax = plt.subplots(1)
+#     # Display the image
+#     ax.imshow(im)
+    
+#     for rec in clf.haar_feature.positive_regions:
+#         # Create a Rectangle patch
+#         rect = patches.Rectangle((rec.x,rec.y), rec.width,rec.height,linewidth=1,edgecolor='y',facecolor='r')
+#         # Add the patch to the Axes
+#         ax.add_patch(rect)
+
+#     for rec in clf.haar_feature.negative_regions:
+#         # Create a Rectangle patch
+#         rect = patches.Rectangle((rec.x,rec.y), rec.width,rec.height,linewidth=1,edgecolor='b',facecolor='b')
+#         # Add the patch to the Axes
+#         ax.add_patch(rect)
+        
+        
+        
+
+
+# # In[59]:
+
+
+# import matplotlib.pyplot as plt
+# import matplotlib.patches as patches
+# from PIL import Image
+# import numpy as np
+
+# im = trainData[2101][0]
+
+# show_clf_detail(im, model.clfs[0])
 
