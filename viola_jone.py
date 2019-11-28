@@ -289,13 +289,13 @@ trainData = []
 for folder, yVal in folders.items():
     for filename in glob.glob('./dataset/trainset/' + folder + '/*.png'):
         im = Image.open(filename)
-        trainData.append((np.asarray(im, dtype="int32") / 255, yVal))
+        trainData.append((np.asarray(im, dtype="float32"), yVal))
         
 testData = []
 for folder, yVal in folders.items():
     for filename in glob.glob('./dataset/testset/' + folder + '/*.png'):
         im = Image.open(filename)
-        testData.append([np.asarray(im, dtype="int32") / 255, yVal])
+        testData.append([np.asarray(im, dtype="float32"), yVal])
 
 
 # In[3]:
@@ -329,8 +329,8 @@ def read_mode(file_name):
 model = ViolaJones()
 # test_trainData = trainData[0:100] + trainData[2300:]
 # test_testData = testData[0:100] + testData[2100:]
-model.train(trainData, testData, 8, 8)
-save_model(model, 'model_1128')
+model.train(trainData, testData, 16, 16)
+save_model(model, 'model_1128_16')
 
 
 # In[20]:
