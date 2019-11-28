@@ -1,7 +1,7 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
-# In[54]:
+# In[1]:
 
 
 import math
@@ -42,7 +42,7 @@ class ViolaJones:
             self.haar_feature = haar_feature
             self.threshold = threshold
             self.polarity = polarity
-            #self.acc = None
+            self.acc = None
             
         def classify(self, x):
             return 1 if self.polarity * self.haar_feature.compute_features(x) < self.polarity * self.threshold else 0
@@ -65,7 +65,7 @@ class ViolaJones:
         self.alphas = []
         self.clfs = []
         
-    def build_features(self, image_shape, max_height, max_width, verbose=False):
+    def build_features(self, image_shape, max_height, max_width, verbose=True):
         
         height, width = image_shape
         
@@ -161,8 +161,6 @@ class ViolaJones:
         pbar = tqdm(total=total_features)
         
         for index, feature in enumerate(X):
-#             if len(classifiers) % 5000 == 0 and len(classifiers) != 0:
-#                 print("\t Trained %d classifiers out of %d" % (len(classifiers), total_features))
             applied_feature = sorted(zip(weights, feature, y), key=lambda x: x[1])
             pos_seen, neg_seen = 0, 0
             pos_weights, neg_weights = 0, 0
@@ -201,7 +199,7 @@ class ViolaJones:
                 best_clf, best_error, best_accuracy = clf, error, accuracy
     
         # Set training accuracy for the selected classifier
-        #best_clf.acc = sum(1 if i == 0 else 0 for i in best_accuracy) / len(best_accuracy)
+        best_clf.acc = sum(1 if i == 0 else 0 for i in best_accuracy) / len(best_accuracy)
         return best_clf, best_error, best_accuracy
 
     def train(self, training, testing, max_height=8, max_width=8, test_round={1, 3, 5, 10}):
@@ -288,17 +286,16 @@ import glob
 folders = {'non-faces' : 0, 'faces' : 1}
 
 trainData = []
-
 for folder, yVal in folders.items():
     for filename in glob.glob('./dataset/trainset/' + folder + '/*.png'):
         im = Image.open(filename)
-        trainData.append((np.asarray(im, dtype="int32"), yVal))
+        trainData.append((np.asarray(im, dtype="int32") / 255, yVal))
         
 testData = []
 for folder, yVal in folders.items():
     for filename in glob.glob('./dataset/testset/' + folder + '/*.png'):
         im = Image.open(filename)
-        testData.append([np.asarray(im, dtype="int32"), yVal])
+        testData.append([np.asarray(im, dtype="int32") / 255, yVal])
 
 
 # In[3]:
@@ -330,10 +327,10 @@ def read_mode(file_name):
 
 
 model = ViolaJones()
-test_trainData = trainData[0:100] + trainData[2300:]
-test_testData = testData[0:100] + testData[2100:]
+# test_trainData = trainData[0:100] + trainData[2300:]
+# test_testData = testData[0:100] + testData[2100:]
 model.train(trainData, testData, 8, 8)
-save_model(model, 'model_1124')
+save_model(model, 'model_1128')
 
 
 # In[20]:
@@ -342,7 +339,7 @@ save_model(model, 'model_1124')
 # model = read_mode('model_test')
 
 
-# In[58]:
+# In[5]:
 
 
 # check_round = [1, 3, 5, 10]
@@ -359,7 +356,7 @@ save_model(model, 'model_1124')
 #     print('Width:', clf.haar_feature.width)
 #     print('Length:', clf.haar_feature.height)
 #     print('Threshold:', clf.threshold)
-#     #print('Training accuracy:', clf.acc)
+#     print('Training accuracy:', clf.acc)
 #     # Create figure and axes
 #     fig, ax = plt.subplots(1)
 #     # Display the image
@@ -381,7 +378,7 @@ save_model(model, 'model_1124')
         
 
 
-# # In[59]:
+# In[6]:
 
 
 # import matplotlib.pyplot as plt
@@ -392,4 +389,10 @@ save_model(model, 'model_1124')
 # im = trainData[2101][0]
 
 # show_clf_detail(im, model.clfs[0])
+
+
+# In[ ]:
+
+
+
 
