@@ -138,13 +138,13 @@ class ViolaJones:
 
 
     def apply_features(self, features, training_data):
-        X = np.zeros((len(features), len(training_data)))
+        X_features = np.zeros((len(features), len(training_data)))
         y = np.array(list(map(lambda data: data[1], training_data)))
         i = 0
         for haar_feature in tqdm(features):
-            X[i] = list(map(lambda data: haar_feature.compute_features(data[0]), training_data))
+            X_featuresX[i] = list(map(lambda data: haar_feature.compute_features(data[0]), training_data))
             i += 1
-        return X, y
+        return X_features, y
 
     def train_weak(self, X, y, features, weights):
         total_pos, total_neg = 0, 0
@@ -187,20 +187,20 @@ class ViolaJones:
         return classifiers
         
     def select_best(self, classifiers, weights, training_data):
-        best_clf, best_error, best_accuracy = None, float('inf'), None
+        best_clf, best_err, best_acc = None, float('inf'), None
         for clf in classifiers:
-            error, accuracy = 0, []
+            err, acc = 0, []
             for data, w in zip(training_data, weights):
-                correctness = abs(clf.classify(data[0]) - data[1])
-                accuracy.append(correctness)
-                error += w * correctness
-            error = error / len(training_data)
-            if error < best_error:
-                best_clf, best_error, best_accuracy = clf, error, accuracy
+                is_incorrect = abs(clf.classify(data[0]) - data[1])
+                acc.append(is_incorrect)
+                err += w * is_incorrect
+            err = err / len(training_data)
+            if err < best_err:
+                best_clf, best_err, best_acc = clf, err, acc
     
         # Set training accuracy for the selected classifier
-        best_clf.acc = sum(1 if i == 0 else 0 for i in best_accuracy) / len(best_accuracy)
-        return best_clf, best_error, best_accuracy
+        best_clf.acc = sum(1 if i == 0 else 0 for i in best_acc) / len(best_acc)
+        return best_clf, best_err, best_acc
 
     def train(self, training, testing, max_height=8, max_width=8, test_round={1, 3, 5, 10}):
         
@@ -214,16 +214,13 @@ class ViolaJones:
         print('Initialize the weights of {} weak classfiers...'.format(self.T))
         for x in range(len(training)):
             training_data.append((integral_image(training[x][0]), training[x][1]))
-            if training[x][1] == 1:
-                weights[x] = 1.0 / (2 * pos_num)
-            else:
-                weights[x] = 1.0 / (2 * neg_num)
+            weights[x] = 1.0 / (2 * pos_num) if training[x][1] == 1 else 1.0 / (2 * neg_num)
                 
         print('Build up Haar features filter...')
         features = self.build_features(training_data[0][0].shape, max_height, max_width)
         
         print('Precompute the Harr features of the training set...')
-        X, y = self.apply_features(features, training_data)
+        X_features, y = self.apply_features(features, training_data)
 #         print(X.shape)
 #         print(y.shape)
         print('Start Adaboost...')
@@ -231,32 +228,33 @@ class ViolaJones:
         for t in range(self.T):
             print('Round {}/{}:'.format(t + 1, self.T))
             weights = weights / np.linalg.norm(weights)
-            weak_classifiers = self.train_weak(X, y, features, weights)
-            clf, error, accuracy = self.select_best(weak_classifiers, weights, training_data)
-            beta = error / (1.0 - error)
-            for i in range(len(accuracy)):
-                weights[i] = weights[i] * (beta ** (1 - accuracy[i]))
+            weak_classifiers = self.train_weak(X_features, y, features, weights)
+            clf, err, acc = self.select_best(weak_classifiers, weights, training_data)
+
+            beta = err / (1.0 - err)
             alpha = math.log(1.0/beta)
-            self.alphas.append(alpha)
+
+            # Update the weight
+            for i in range(len(acc)):
+                weights[i] = weights[i] * (beta ** (1 - acc[i]))
+
             self.clfs.append(clf)
-            
+            self.alphas.append(alpha)
+
             if (t + 1) in test_round:
                 self.test(testing, t + 1)
             
     def classify(self, image):
-        total = 0
+        res = 0
         ii = integral_image(image)
         for alpha, clf in zip(self.alphas, self.clfs):
-            total += alpha * clf.classify(ii)
-        return 1 if total >= 0.5 * sum(self.alphas) else 0
+            res += alpha * clf.classify(ii)
+        return 1 if res >= 0.5 * sum(self.alphas) else 0
     
     def test(self, testing, t):
         total = len(testing)
-        TP = 0
-        TN = 0
-        FP = 0
-        FN = 0
-        
+        TP, TN, FP, FN = 0, 0, 0, 0
+    
         for image, yVal in testing:
             if self.classify(image) == yVal:
                 if yVal == 1:
