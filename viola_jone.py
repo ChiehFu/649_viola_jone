@@ -233,7 +233,7 @@ class ViolaJones:
         
         return best_clf, best_error, best_accuracy
 
-    def train(self, training, testing, max_height=8, max_width=8, crit='err', test_round={1, 3, 5, 10}):
+    def train(self, training, testing, max_height=8, max_width=8, crit='err'):
         
         pos_num = sum([tup[1] for tup in training])
         neg_num = len(training) - pos_num
@@ -317,7 +317,7 @@ class ViolaJones:
 from PIL import Image
 import numpy as np
 import glob
-get_ipython().run_line_magic('matplotlib', 'inline')
+# get_ipython().run_line_magic('matplotlib', 'inline')
 
 folders = {'non-faces' : 0, 'faces' : 1}
 
@@ -362,16 +362,16 @@ def read_mode(file_name):
 # In[18]:
 
 
-crit = 'err'
+# crit = 'err'
 # crit = 'fpr'
-# crit = 'fnr'
+crit = 'fnr'
 
 model = ViolaJones(T=5)
 # test_trainData = trainData[0:100] + trainData[2300:]
 # test_testData = testData[0:100] + testData[2100:]
 # model.train(test_trainData, test_testData, 1, 1, crit=crit)
 model.train(trainData, testData, 8, 8, crit=crit)
-save_model(model, 'modeltest_' + crit)
+save_model(model, 'model_' + crit)
 
 
 # In[74]:
