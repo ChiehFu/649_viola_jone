@@ -43,4 +43,7 @@ def read_mode(file_name):
 
 model = ViolaJones(T=args['t'])
 model.train(trainData, testData, 8, 8, crit=args['c'])
-save_model(model, 'model_' + args['c'])
+# test_trainData = trainData[0:100] + trainData[2300:]
+# test_testData = testData[0:100] + testData[2100:]
+# model.train(test_trainData, test_testData, 1, 1, crit=args['c'])
+save_model(model, './save_models/model_' + args['c'])
