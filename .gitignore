@@ -1,2 +1,5 @@
 save_features/*
 **/.vscode/
+Makefile
+Project_F19.pdf
+.ipynb_checkpoints/*
