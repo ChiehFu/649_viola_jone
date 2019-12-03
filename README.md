@@ -37,6 +37,8 @@
     # Train the model with false negative rate as criterion for weak classifier selection for 5 rounds
     python main.py -T 5 -criterion 'fnr'
     ```
+
+    The model trained during this stage will be save under the directory `/saved_model`, and can be used by the jupiter notebook `model_viz.ipynb` for better visualization.
 3. Visualization 
    
-   To better understand the classifiers selected by the model check out the jupiter notebook `model_viz.ipynb`, which load the saved model includes the features selected for each rounds and the details.
+   To better understand the classifiers selected by the model, please use the jupiter notebook `model_viz.ipynb` to load the saved model and to visualize the features selected for each rounds and the related details.
