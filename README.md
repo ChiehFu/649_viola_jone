@@ -37,3 +37,6 @@
     # Train the model with false negative rate as criterion for weak classifier selection for 5 rounds
     python main.py -T 5 -criterion 'fnr'
     ```
+3. Visualization 
+   
+   To better understand the classifiers selected by the model check out the jupiter notebook `model_viz.ipynb`, which load the saved model includes the features selected for each rounds and the details.
