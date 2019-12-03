@@ -1,6 +1,7 @@
 # ECEN 649 Course Project - Viola-Jones Algorithm
 
 ## Dependencies:
+Please install the following dependencies to run the code.
 - Python 3.7
 - glob3 0.0.1
   - Reading directories and loading data
@@ -26,7 +27,7 @@
     parser.add_argument('-width', help='Maximal width of feature', type=int, default=8)
     parser.add_argument('-height', elp='Maximal height of feature',type=int, default=8)
     ```
-    Commands to run:
+    Go to the directory `/649_viola_jone` and use the following commands to run:
     ```
     # Train the model with all default setting (T = 10 rounds, criterion = 'err', max-width = 8, max-height = 8)
     python main.py 
