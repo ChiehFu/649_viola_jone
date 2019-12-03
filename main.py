@@ -7,8 +7,12 @@ import pickle
 import os 
 
 parser = argparse.ArgumentParser(description='ViolaJones Algorithm')
-parser.add_argument('-t', help='# of rounds', type=int, default=10)
-parser.add_argument('-c', help='Criterion for model optimization', type=str, default='err', choices=['err', 'fpr', 'fnr'])
+parser.add_argument('-T', help='# of rounds', type=int, default=10)
+parser.add_argument('-criterion', help='Criterion for model optimization', type=str, default='err', choices=['err', 'fpr', 'fnr'])
+parser.add_argument('-load_feat', help='Load features file', type=str, default='')
+parser.add_argument('-width', type=int, default=8)
+parser.add_argument('-height', type=int, default=8)
+
 args = vars(parser.parse_args())
 
 
@@ -40,10 +44,11 @@ def read_mode(file_name):
     with open(os.path.join(dir_path, file_name), 'rb') as input:
         model = pickle.load(input)
         return model
-
-model = ViolaJones(T=args['t'])
-model.train(trainData, testData, 8, 8, crit=args['c'])
 # test_trainData = trainData[0:100] + trainData[2300:]
 # test_testData = testData[0:100] + testData[2100:]
-# model.train(test_trainData, test_testData, 1, 1, crit=args['c'])
-save_model(model, './save_models/model_' + args['c'])
+model = ViolaJones(T=args['T'])
+model.train(trainData, testData, args['height'], args['width'], crit=args['criterion'], load_feature=args['load_feat'])
+save_model(model, './save_models/model_' + args['criterion'] + '_' + str(args['T']))
+
+
+# model.train(test_trainData, test_testData, args['height'], args['width'], crit=args['criterion'], load_feature=args['load_feat'])

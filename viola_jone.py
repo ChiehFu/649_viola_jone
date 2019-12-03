@@ -2,6 +2,9 @@ import math
 from tqdm import tqdm
 import numpy as np
 from utils import RectangleRegion, integral_image
+import pickle
+import os 
+dir_path = os.path.abspath('')
 
 class ViolaJones:
     
@@ -43,8 +46,8 @@ class ViolaJones:
         self.test_fpr = []
         self.test_fnr = []
         
-    def build_features(self, image_shape, max_height, max_width, verbose=False):
-        
+    def build_features(self, image_shape, max_height, max_width, load_feature=''):
+
         height, width = image_shape
         
         features = []
@@ -110,17 +113,29 @@ class ViolaJones:
         print('\t There are ', type_count[2],' type 3 (three horizontal) features.')
         print('\t There are ', type_count[3],' type 4 (three vertical) features.')
         print('\t There are ', type_count[4],' type 5 (four) features.')
-        
+
         return features
 
 
-    def apply_features(self, features, training_data):
-        X = np.zeros((len(features), len(training_data)))
+    def apply_features(self, features, training_data, load_feature=''):
         y = np.array(list(map(lambda data: data[1], training_data)))
+
+        if load_feature != '':
+            print('Load calculated features...')
+            with open(os.path.join(dir_path, load_feature), 'rb') as input:
+                X = pickle.load(input)
+                return X, y
+
+        X = np.zeros((len(features), len(training_data)))
         i = 0
         for haar_feature in tqdm(features):
             X[i] = list(map(lambda data: haar_feature.compute_features(data[0]), training_data))
             i += 1
+
+        print('Save calculated precompute...')
+        with open(os.path.join(dir_path, './save_features/features_{}'.format(len(features))), 'wb') as output:
+            pickle.dump(X, output, pickle.HIGHEST_PROTOCOL)
+
         return X, y
 
     def train_weak(self, X, y, features, weights):
@@ -163,10 +178,10 @@ class ViolaJones:
             
         return classifiers
         
-    def select_best(self, classifiers, weights, training_data):
-        # Pick the best classifier by emperical error, false positive rate, or flase negative rate
+    def select_best(self, classifiers, weights, training_data, crit='err'):
+        # Pick the best classifier by emperical error, false positive rate, or false negative rate
         best_clf, best_err, best_acc = None, float('inf'), None
-        best_fp_err, best_fn_err = None, None
+        best_fp_err, best_fn_err = float('inf'), float('inf')
         for clf in classifiers:
             err, acc = 0, []
             fp_err, fn_err = 0, 0
@@ -183,16 +198,22 @@ class ViolaJones:
                         fn_err += w
                     else:
                         fp_err += w
-                        
-            if err < best_err:
+            err = err / len(training_data)   
+
+            if crit == 'err' and err < best_err:
                 best_clf, best_err, best_acc = clf, err, acc
-                best_fp_err, best_fn_err = fp_err, fn_err
-                
+            elif crit == 'fpr' and fp_err < best_fp_err:
+                best_clf, best_err, best_acc = clf, err, acc
+                best_fp_err = fp_err
+            elif crit == 'fnr' and fn_err < best_fn_err:
+                best_clf, best_err, best_acc = clf, err, acc
+                best_fn_err = fn_err
+
         # Set training accuracy for the selected classifier
         best_clf.acc = sum(1 if i == 0 else 0 for i in best_acc) / len(best_acc)
-        return best_clf, best_err, best_acc, best_fp_err / best_err, best_fn_err / best_err
+        return best_clf, best_err, best_acc
     
-    def train(self, training, testing, max_height=8, max_width=8, crit='err', test_round={1, 3, 5, 10}):
+    def train(self, training, testing, max_height=8, max_width=8, crit='err', load_feature=''):
         
         pos_num = sum([tup[1] for tup in training])
         neg_num = len(training) - pos_num
@@ -206,43 +227,44 @@ class ViolaJones:
         for x in range(len(training)):
             training_data.append((integral_image(training[x][0]), training[x][1]))
             if training[x][1] == 1:
-                weights[x] = 1.0 / pos_num
+                weights[x] = 1.0 / (2 * pos_num)
             else:
-                weights[x] = 1.0 / neg_num
+                weights[x] = 1.0 / (2 * neg_num)
                 
-        print('Build up Haar features filter...')
+        print('Build up Haar features filter of the size {}x{}'.format(max_height, max_width))
         features = self.build_features(training_data[0][0].shape, max_height, max_width)
         
         print('Precompute the Harr features of the training set...')
-        X, y = self.apply_features(features, training_data)
+        X, y = self.apply_features(features, training_data, load_feature)
 #         print(X.shape)
 #         print(y.shape)
         print('Start Adaboost...')
     
         for t in range(self.T):
             print('Round {}/{}:'.format(t + 1, self.T))
-            weights = weights / sum(weights)
+            weights = weights / np.linalg.norm(weights)
             weak_classifiers = self.train_weak(X, y, features, weights)
-            clf, total_error, accuracy, fp_error, fn_error = self.select_best(weak_classifiers, weights, training_data)
+            clf, total_error, accuracy = self.select_best(weak_classifiers, weights, training_data, crit)
             
-            if crit == 'err':
-                beta = total_error / (1.0 - total_error)
-                for i in range(len(accuracy)):
-                    weights[i] = weights[i] * (beta ** (1 - accuracy[i]))
-                alpha = math.log(1.0/beta)
-            elif crit == 'fpr':
-                alpha = math.log(1.0/total_error) *  (1 - fn_error) / fp_error
-                for i in range(len(accuracy)):
-                    weights[i] = weights[i] * math.exp(alpha * accuracy[i])
-            elif crit == 'fnr':
-                alpha = math.log(1.0/total_error) *  (1 - fp_error) / fn_error
-                for i in range(len(accuracy)):
-                    weights[i] = weights[i] * math.exp(alpha * accuracy[i])
+            beta = total_error / (1.0 - total_error)
+            for i in range(len(accuracy)):
+                weights[i] = weights[i] * (beta ** (1 - accuracy[i]))
+            alpha = math.log(1.0/beta)
+            # if crit == 'err' or crit == 'fpr':
+            #     beta = total_error / (1.0 - total_error)
+            #     for i in range(len(accuracy)):
+            #         weights[i] = weights[i] * (beta ** (1 - accuracy[i]))
+            #     alpha = math.log(1.0/beta)
+            # elif crit == 'fnr':
+            #     alpha = math.log((1.0 - total_error) /total_error) *  (1 - fp_error) / fn_error
+            #     for i in range(len(accuracy)):
+            #         weights[i] = weights[i] * math.exp(alpha * accuracy[i])
 
             self.alphas.append(alpha)
             self.clfs.append(clf)
             
-            self.test(testing, t + 1)
+            if t == self.T - 1:
+                self.test(testing, t + 1)
             
     def classify(self, image):
         total = 0
