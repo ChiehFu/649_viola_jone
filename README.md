@@ -15,22 +15,23 @@
     git clone https://github.com/ChiehFu/649_viola_jone
     ```
 2. Run and test the model
-   - Arguments setting:
-        ```
-        parser.add_argument('-T', help='# of rounds', type=int, default=10)
-        parser.add_argument('-criterion', help='Criterion for model optimization', type=str, default='err', choices=['err', 'fpr', 'fnr'])
-        parser.add_argument('-load_feat', help='Load features file', type=str, default='')
-        parser.add_argument('-width', help='Maximal width of feature', type=int, default=8)
-        parser.add_argument('-height', elp='Maximal height of feature',type=int, default=8)
-        ```
-    - Commands to run:
-        ```
-        # Train the model with all default setting 
-        python main.py 
 
-        # Train the model with false positive rate as criterion for weak classifier selection for 5 rounds
-        python main.py -T 5 -criterion 'fpr'
+    Arguments setting:
+    ```
+    parser.add_argument('-T', help='# of rounds', type=int, default=10)
+    parser.add_argument('-criterion', help='Criterion for model optimization', type=str, default='err', choices=['err', 'fpr', 'fnr'])
+    parser.add_argument('-load_feat', help='Load features file', type=str, default='')
+    parser.add_argument('-width', help='Maximal width of feature', type=int, default=8)
+    parser.add_argument('-height', elp='Maximal height of feature',type=int, default=8)
+    ```
+    Commands to run:
+    ```
+    # Train the model with all default setting 
+    python main.py 
 
-        # Train the model with false negative rate as criterion for weak classifier selection for 5 rounds
-        python main.py -T 5 -criterion 'fnr'
-        ```
+    # Train the model with false positive rate as criterion for weak classifier selection for 5 rounds
+    python main.py -T 5 -criterion 'fpr'
+
+    # Train the model with false negative rate as criterion for weak classifier selection for 5 rounds
+    python main.py -T 5 -criterion 'fnr'
+    ```
