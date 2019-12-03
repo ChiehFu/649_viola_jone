@@ -9,7 +9,7 @@ import os
 parser = argparse.ArgumentParser(description='ViolaJones Algorithm')
 parser.add_argument('-T', help='# of rounds', type=int, default=10)
 parser.add_argument('-criterion', help='Criterion for model optimization', type=str, default='err', choices=['err', 'fpr', 'fnr'])
-parser.add_argument('-load_feat', help='Load features file', type=str, default='')
+parser.add_argument('-load_feat', help='Load precomputed features file', type=str, default='')
 parser.add_argument('-width', help='Maximal width of feature', type=int, default=8)
 parser.add_argument('-height', help='Maximal height of feature',type=int, default=8)
 
@@ -48,6 +48,11 @@ def read_mode(file_name):
 # test_testData = testData[0:100] + testData[2100:]
 model = ViolaJones(T=args['T'])
 model.train(trainData, testData, args['height'], args['width'], crit=args['criterion'], load_feature=args['load_feat'])
+
+if not os.path.exists(os.path.join(dir_path, './save_models')):
+    os.makedirs(os.path.join(dir_path, './save_models'))
+
+print('save trained model at {}'.format('./save_models/model_' + args['criterion'] + '_' + str(args['T'])))
 save_model(model, './save_models/model_' + args['criterion'] + '_' + str(args['T']))
 
 

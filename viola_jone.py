@@ -132,8 +132,12 @@ class ViolaJones:
             X[i] = list(map(lambda data: haar_feature.compute_features(data[0]), training_data))
             i += 1
 
-        print('Save calculated precompute...')
-        with open(os.path.join(dir_path, './save_features/features_{}'.format(len(features))), 'wb') as output:
+
+        if not os.path.exists(os.path.join(dir_path, './save_features/')):
+            os.makedirs(os.path.join(dir_path, './save_features/'))
+
+        print('Save precomputed feature at {}'.format(os.path.join(dir_path, 'save_features/features_{}'.format(len(features)))))
+        with open(os.path.join(dir_path, 'save_features/features_{}'.format(len(features))), 'wb') as output:
             pickle.dump(X, output, pickle.HIGHEST_PROTOCOL)
 
         return X, y
@@ -234,7 +238,7 @@ class ViolaJones:
         print('Build up Haar features filter of the size {}x{}'.format(max_height, max_width))
         features = self.build_features(training_data[0][0].shape, max_height, max_width)
         
-        print('Precompute the Harr features of the training set...')
+        print('Precompute the Haar features of the training set...')
         X, y = self.apply_features(features, training_data, load_feature)
 #         print(X.shape)
 #         print(y.shape)
