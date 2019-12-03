@@ -10,8 +10,8 @@ parser = argparse.ArgumentParser(description='ViolaJones Algorithm')
 parser.add_argument('-T', help='# of rounds', type=int, default=10)
 parser.add_argument('-criterion', help='Criterion for model optimization', type=str, default='err', choices=['err', 'fpr', 'fnr'])
 parser.add_argument('-load_feat', help='Load features file', type=str, default='')
-parser.add_argument('-width', type=int, default=8)
-parser.add_argument('-height', type=int, default=8)
+parser.add_argument('-width', help='Maximal width of feature', type=int, default=8)
+parser.add_argument('-height', help='Maximal height of feature',type=int, default=8)
 
 args = vars(parser.parse_args())
 
