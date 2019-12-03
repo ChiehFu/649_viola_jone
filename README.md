@@ -28,8 +28,11 @@
     ```
     Commands to run:
     ```
-    # Train the model with all default setting 
+    # Train the model with all default setting (T = 10 rounds, criterion = 'err', max-width = 8, max-height = 8)
     python main.py 
+
+    # Train the model with empirical error as criterion for weak classifier selection for 5 rounds
+    python main.py -T 5 -criterion 'err'
 
     # Train the model with false positive rate as criterion for weak classifier selection for 5 rounds
     python main.py -T 5 -criterion 'fpr'
