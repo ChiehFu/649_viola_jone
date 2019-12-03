@@ -3,3 +3,4 @@ save_features/*
 Makefile
 Project_F19.pdf
 .ipynb_checkpoints/*
+__pycache__/*
