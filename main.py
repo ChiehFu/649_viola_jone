@@ -12,6 +12,7 @@ parser.add_argument('-criterion', help='Criterion for model optimization', type=
 parser.add_argument('-load_feat', help='Load precomputed features file', type=str, default='')
 parser.add_argument('-width', help='Maximal width of feature', type=int, default=8)
 parser.add_argument('-height', help='Maximal height of feature',type=int, default=8)
+parser.add_argument('-test_mode', help='Testing mode', type=str, default='single', choices=['single', 'cascade'])
 
 args = vars(parser.parse_args())
 
@@ -47,7 +48,7 @@ def read_mode(file_name):
 # test_trainData = trainData[0:100] + trainData[2300:]
 # test_testData = testData[0:100] + testData[2100:]
 model = ViolaJones(T=args['T'])
-model.train(trainData, testData, args['height'], args['width'], crit=args['criterion'], load_feature=args['load_feat'])
+model.train(trainData, testData, args['test_mode'], args['height'], args['width'], crit=args['criterion'], load_feature=args['load_feat'])
 
 if not os.path.exists(os.path.join(dir_path, './save_models')):
     os.makedirs(os.path.join(dir_path, './save_models'))

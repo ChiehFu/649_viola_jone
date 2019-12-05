@@ -217,7 +217,7 @@ class ViolaJones:
         best_clf.acc = sum(1 if i == 0 else 0 for i in best_acc) / len(best_acc)
         return best_clf, best_err, best_acc
     
-    def train(self, training, testing, max_height=8, max_width=8, crit='err', load_feature=''):
+    def train(self, training, testing, test_mode, max_height=8, max_width=8, crit='err', load_feature=''):
         
         pos_num = sum([tup[1] for tup in training])
         neg_num = len(training) - pos_num
@@ -268,7 +268,7 @@ class ViolaJones:
             self.clfs.append(clf)
             
             if t == self.T - 1:
-                self.test(testing, t + 1)
+                self.test(testing, t + 1, test_mode)
             
     def classify(self, image):
         total = 0
@@ -276,8 +276,14 @@ class ViolaJones:
         for alpha, clf in zip(self.alphas, self.clfs):
             total += alpha * clf.classify(ii)
         return 1 if total >= 0.5 * sum(self.alphas) else 0
-    
-    def test(self, testing, t):
+
+    def cascade_classify(self, image): 
+        for weak_clf in self.clfs:
+            if weak_clf.classify(image) == 0:
+                return 0
+        return 1
+
+    def test(self, testing, t, test_mode):
         total = len(testing)
         TP = 0
         TN = 0
@@ -285,7 +291,8 @@ class ViolaJones:
         FN = 0
         
         for image, yVal in testing:
-            if self.classify(image) == yVal:
+            pred = self.classify(image) if test_mode == 'single' else self.cascade_classify(image)
+            if pred == yVal:
                 if yVal == 1:
                     TP += 1
                 else:
