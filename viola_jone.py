@@ -38,14 +38,14 @@ class ViolaJones:
             return sum([pos.compute_feature(x) for pos in self.positive_regions]) - sum([neg.compute_feature(x) for neg in self.negative_regions])
         
             
-    def __init__(self, T):
+    def __init__(self, T, v=True):
         self.T = T
         self.alphas = []
         self.clfs = []
         self.test_acc = []
         self.test_fpr = []
         self.test_fnr = []
-        
+        self.verbose = v
     def build_features(self, image_shape, max_height, max_width, load_feature=''):
 
         height, width = image_shape
@@ -105,14 +105,15 @@ class ViolaJones:
                             
                         cur_y += 1
                     cur_x += 1
-                    
-        # Print the feature summary 
-        print('\t The total number of Haar Features is : ', len(features))
-        print('\t There are ', type_count[0] ,' type 1 (two vertical) features.')
-        print('\t There are ', type_count[1],' type 2 (two horizontal) features.')
-        print('\t There are ', type_count[2],' type 3 (three horizontal) features.')
-        print('\t There are ', type_count[3],' type 4 (three vertical) features.')
-        print('\t There are ', type_count[4],' type 5 (four) features.')
+
+        if self.verbose:            
+            # Print the feature summary 
+            print('\t The total number of Haar Features is : ', len(features))
+            print('\t There are ', type_count[0] ,' type 1 (two vertical) features.')
+            print('\t There are ', type_count[1],' type 2 (two horizontal) features.')
+            print('\t There are ', type_count[2],' type 3 (three horizontal) features.')
+            print('\t There are ', type_count[3],' type 4 (three vertical) features.')
+            print('\t There are ', type_count[4],' type 5 (four) features.')
 
         return features
 
@@ -217,7 +218,7 @@ class ViolaJones:
         best_clf.acc = sum(1 if i == 0 else 0 for i in best_acc) / len(best_acc)
         return best_clf, best_err, best_acc
     
-    def train(self, training, testing, test_mode, max_height=8, max_width=8, crit='err', load_feature=''):
+    def train(self, training, testing, max_height=8, max_width=8, crit='err', load_feature=''):
         
         pos_num = sum([tup[1] for tup in training])
         neg_num = len(training) - pos_num
@@ -268,7 +269,7 @@ class ViolaJones:
             self.clfs.append(clf)
             
             if t == self.T - 1:
-                self.test(testing, t + 1, test_mode)
+                self.test(testing, t + 1)
             
     def classify(self, image):
         total = 0
@@ -277,13 +278,7 @@ class ViolaJones:
             total += alpha * clf.classify(ii)
         return 1 if total >= 0.5 * sum(self.alphas) else 0
 
-    def cascade_classify(self, image): 
-        for weak_clf in self.clfs:
-            if weak_clf.classify(image) == 0:
-                return 0
-        return 1
-
-    def test(self, testing, t, test_mode):
+    def test(self, testing, t):
         total = len(testing)
         TP = 0
         TN = 0
@@ -291,7 +286,7 @@ class ViolaJones:
         FN = 0
         
         for image, yVal in testing:
-            pred = self.classify(image) if test_mode == 'single' else self.cascade_classify(image)
+            pred = self.classify(image)
             if pred == yVal:
                 if yVal == 1:
                     TP += 1

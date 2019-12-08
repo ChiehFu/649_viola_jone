@@ -1,4 +1,5 @@
 from viola_jone import ViolaJones
+from viola_jone_cascade import ViolaJonesCascade
 from PIL import Image
 import argparse
 import numpy as np
@@ -12,7 +13,7 @@ parser.add_argument('-criterion', help='Criterion for model optimization', type=
 parser.add_argument('-load_feat', help='Load precomputed features file', type=str, default='')
 parser.add_argument('-width', help='Maximal width of feature', type=int, default=8)
 parser.add_argument('-height', help='Maximal height of feature',type=int, default=8)
-parser.add_argument('-test_mode', help='Testing mode', type=str, default='single', choices=['single', 'cascade'])
+parser.add_argument('-mode', help='Testing mode', type=str, default='single', choices=['single', 'cascade'])
 
 args = vars(parser.parse_args())
 
@@ -45,16 +46,23 @@ def read_mode(file_name):
     with open(os.path.join(dir_path, file_name), 'rb') as input:
         model = pickle.load(input)
         return model
-# test_trainData = trainData[0:100] + trainData[2300:]
-# test_testData = testData[0:100] + testData[2100:]
-model = ViolaJones(T=args['T'])
-model.train(trainData, testData, args['test_mode'], args['height'], args['width'], crit=args['criterion'], load_feature=args['load_feat'])
+if args['mode'] == 'single' :
+    print('Building a single detector...')
+    # test_trainData = trainData[0:100] + trainData[2300:]
+    # test_testData = testData[0:100] + testData[2100:]
+    # model.train(test_trainData, test_testData, args['height'], args['width'], crit=args['criterion'], load_feature=args['load_feat'])
+    model = ViolaJones(T=args['T'])
+    model.train(trainData, testData, args['height'], args['width'], crit=args['criterion'], load_feature=args['load_feat'])
 
-if not os.path.exists(os.path.join(dir_path, './save_models')):
-    os.makedirs(os.path.join(dir_path, './save_models'))
+    if not os.path.exists(os.path.join(dir_path, './save_models')):
+        os.makedirs(os.path.join(dir_path, './save_models'))
 
-print('save trained model at {}'.format('./save_models/model_' + args['criterion'] + '_' + str(args['T'])))
-save_model(model, './save_models/model_' + args['criterion'] + '_' + str(args['T']))
-
-
-# model.train(test_trainData, test_testData, args['height'], args['width'], crit=args['criterion'], load_feature=args['load_feat'])
+    print('save trained model at {}'.format('./save_models/model_' + args['criterion'] + '_' + str(args['T'])))
+    save_model(model, './save_models/model_' + args['criterion'] + '_' + str(args['T']))
+else:
+    print('Building a cascade system...')
+    layers = [1, 5, 10, 40]
+    model = ViolaJonesCascade(layers)
+    model.train(trainData, testData, load_feature=args['load_feat'])
+    print('save cascade model...')
+    save_model(model, './save_models/model_cascade')
