@@ -61,8 +61,10 @@ if args['mode'] == 'single' :
     save_model(model, './save_models/model_' + args['criterion'] + '_' + str(args['T']))
 else:
     print('Building a cascade system...')
-    layers = [1, 5, 10, 40]
+    layers = [1, 5, 10, 25]
     model = ViolaJonesCascade(layers)
     model.train(trainData, testData, load_feature=args['load_feat'])
+    print('test cascade model...')
+    model.test(testData)
     print('save cascade model...')
     save_model(model, './save_models/model_cascade')

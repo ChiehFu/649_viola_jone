@@ -187,7 +187,7 @@ class ViolaJones:
         # Pick the best classifier by emperical error, false positive rate, or false negative rate
         best_clf, best_err, best_acc = None, float('inf'), None
         best_fp_err, best_fn_err = float('inf'), float('inf')
-        for clf in classifiers:
+        for clf in tqdm(classifiers):
             err, acc = 0, []
             fp_err, fn_err = 0, 0
             

@@ -10,6 +10,7 @@ class ViolaJonesCascade:
     def __init__(self, layers):
         self.layers = layers
         self.clfs = []
+        self.abandoned = []
 
     def train(self, training, testing, load_feature=''):
         pos, neg = [], []
@@ -23,12 +24,14 @@ class ViolaJonesCascade:
                 print("FPR = 0, stop the training!")
                 break
             clf = ViolaJones(T=feature_num, v=False)
-            clf.train(training, testing, load_feature=load_feature)
+            clf.train(pos + neg, testing, load_feature=load_feature)
             self.clfs.append(clf)
             false_positives = []
             for ex in neg:
                 if self.classify(ex[0]) == 1:
                     false_positives.append(ex)
+
+            self.abandoned.append(len(neg) - len(false_positives))
             print('# of non-face photos abandoned : ', len(neg) - len(false_positives))
             neg = false_positives
         self.test(testing)
