@@ -11,7 +11,7 @@ class ViolaJonesCascade:
         self.layers = layers
         self.clfs = []
 
-    def train(self, training, testing, load_feature):
+    def train(self, training, testing, load_feature=''):
         pos, neg = [], []
         for ex in training: 
             if ex[1] == 1:
