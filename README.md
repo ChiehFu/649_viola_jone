@@ -26,6 +26,7 @@ Please install the following dependencies to run the code.
     parser.add_argument('-load_feat', help='Load features file', type=str, default='')
     parser.add_argument('-width', help='Maximal width of feature', type=int, default=8)
     parser.add_argument('-height', elp='Maximal height of feature',type=int, default=8)
+    parser.add_argument('-mode', help='Testing mode', type=str, default='single', choices=['single', 'cascade'])
     ```
     Go to the directory `/649_viola_jone` and use the following commands to run:
     ```
