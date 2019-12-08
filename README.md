@@ -40,6 +40,9 @@ Please install the following dependencies to run the code.
 
     # Train the model with false negative rate as criterion for weak classifier selection for 5 rounds
     python main.py -T 5 -criterion 'fnr'
+
+    # Train and test a cascading system with totally 41 rounds
+    python main.py -mode cascade
     ```
 
     The model trained during this stage will be save under the directory `/saved_model`, and can be used by the jupiter notebook `model_viz.ipynb` for better visualization.
