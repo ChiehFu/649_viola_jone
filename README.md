@@ -42,7 +42,7 @@ Please install the following dependencies to run the code.
     # Train the model with false negative rate as criterion for weak classifier selection for 5 rounds
     python main.py -T 5 -criterion 'fnr'
 
-    # Train and test a cascading system with totally 41 rounds
+    # Train and test a cascading system with the predefined number and size of detectors 
     python main.py -mode cascade
     ```
 
